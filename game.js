@@ -1,4 +1,17 @@
 
+var winState = {
+  preload: function() {
+
+  },
+  create: function() {
+    style = {font: '18px Arial', fill: '#ffffff'};
+    this.Congratulations = game.add.text(30, 30, 'CONGRATULATIONS!',style)
+  },
+  update: function() {
+
+  }
+}
+
 var gameState = {
   rows: [],
   baskets: [],
@@ -7,7 +20,10 @@ var gameState = {
   rightPressed: false,
   upPressed: false,
   downPressed: false,
+  onLog: true,
   score: 0,
+  carSpeed: 70,
+  logSpeed: 60,
   bunnyHop: function() {
     if(this.keys.left.isDown && !this.leftPressed) {
       this.leftPressed = true;
@@ -57,7 +73,23 @@ var gameState = {
         newBunny.angle = 180;
         this.score++;
         this.resetBunny();
-        console.log('score:',this.score);
+      }
+    }
+    if(this.player.y>this.rows[2]&&this.player.y<this.rows[8]&&!this.onLog){
+      this.bunnyDie();
+    }
+  },
+  checkIfOnLog: function(){
+    this.onLog = true;
+    for(var i = 0; i < this.logs.children.length; i++) {
+      var log = this.logs.children[i];
+      var boundsA = log.getBounds();
+      var boundsB = this.player.getBounds();
+      if(Phaser.Rectangle.intersects(boundsA, boundsB)){
+        break;
+      }
+      if(i === this.logs.children.length-1) {
+        this.onLog = false;
       }
     }
   },
@@ -65,9 +97,110 @@ var gameState = {
     this.player.x = 0+this.tileSize/2;
     this.player.y = this.rows[this.rows.length-1]+this.tileSize/2;
   },
+  setUpCars: function(){
+    this.cars = game.add.group();
+    this.cars.enableBody = true;
+    game.add.sprite(90, this.rows[this.rows.length-2], 'car1F', 0, this.cars);
+    game.add.sprite(270, this.rows[this.rows.length-2], 'car1F', 0, this.cars);
+    game.add.sprite(20, this.rows[this.rows.length-3], 'truck', 0, this.cars);
+    game.add.sprite(250, this.rows[this.rows.length-3], 'truck', 0, this.cars);
+    game.add.sprite(50, this.rows[this.rows.length-4], 'car2F', 0, this.cars);
+    game.add.sprite(150, this.rows[this.rows.length-4], 'car2F', 0, this.cars);
+    game.add.sprite(320, this.rows[this.rows.length-4], 'car2F', 0, this.cars);
+    game.add.sprite(120, this.rows[this.rows.length-5], 'car1', 0, this.cars);
+    game.add.sprite(270, this.rows[this.rows.length-5], 'car1', 0, this.cars);
+    game.add.sprite(20, this.rows[this.rows.length-6], 'truckF', 0, this.cars);
+    game.add.sprite(200, this.rows[this.rows.length-6], 'truckF', 0, this.cars);
+    game.add.sprite(50, this.rows[this.rows.length-7], 'car2', 0, this.cars);
+    game.add.sprite(320, this.rows[this.rows.length-7], 'car2', 0, this.cars);
+    for(var i = 0; i < this.cars.children.length; i++) {
+      if((this.cars.children[i].y/32)%2 === 0 ){
+        this.cars.children[i].body.velocity.x = -this.carSpeed;
+      } else {
+        this.cars.children[i].body.velocity.x = this.carSpeed;
+      }
+      this.cars.children[i].checkWorldBounds = true;
+      this.cars.children[i].outOfBoundsKill = true;
+    }
+  },
+  checkCars: function(){
+    var car = this.cars.getFirstDead();
+    if(!car){
+      return
+    }
+    var y = car.y
+    var width = car.width
+    if((y/32)%2 === 0 ){
+      car.reset(game.world.width, y);
+      car.body.velocity.x = -this.carSpeed;
+    } else {
+      car.reset(0-width, y);
+      car.body.velocity.x = this.carSpeed;
+    }
+    car.checkWorldBounds = true;
+    car.outOfBoundsKill = true;
+  },
+  setUpLogs: function(){
+    this.logs = game.add.group();
+    this.logs.enableBody = true;
+    game.add.sprite(0, this.rows[this.rows.length-9]+1, 'logx5', 0, this.logs);
+    game.add.sprite(150, this.rows[this.rows.length-9]+1, 'logx5', 0, this.logs);
+    game.add.sprite(300, this.rows[this.rows.length-9]+1, 'logx5', 0, this.logs);
+    game.add.sprite(400, this.rows[this.rows.length-9]+1, 'logx5', 0, this.logs);
+    game.add.sprite(-10, this.rows[this.rows.length-10]+2, 'logx3', 0, this.logs);
+    game.add.sprite(120, this.rows[this.rows.length-10]+2, 'logx3', 0, this.logs);
+    game.add.sprite(280, this.rows[this.rows.length-10]+2, 'logx3', 0, this.logs);
+    game.add.sprite(200, this.rows[this.rows.length-11]+1, 'logx5', 0, this.logs);
+    game.add.sprite(30, this.rows[this.rows.length-12]+2, 'logx5', 0, this.logs);
+    game.add.sprite(20, this.rows[this.rows.length-13]+1, 'logx3', 0, this.logs);
+    game.add.sprite(200, this.rows[this.rows.length-13]+1, 'logx3', 0, this.logs);
+    game.add.sprite(80, this.rows[this.rows.length-14]+2, 'logx3', 0, this.logs);
+    game.add.sprite(220, this.rows[this.rows.length-14]+2, 'logx3', 0, this.logs);
+    game.add.sprite(30, this.rows[this.rows.length-15]+1, 'logx5', 0, this.logs);
+    for(var i = 0; i < this.logs.children.length; i++) {
+      if(this.logs.children[i].y%2 === 0 ){
+        this.logs.children[i].body.velocity.x = -this.logSpeed;
+      } else {
+        this.logs.children[i].body.velocity.x = this.logSpeed;
+      }
+      this.logs.children[i].checkWorldBounds = true;
+      this.logs.children[i].outOfBoundsKill = true;
+    }
+  },
+  checkLogs: function(){
+    var log = this.logs.getFirstDead();
+    if(!log){
+      return
+    }
+    var y = log.y
+    var width = log.width
+    if(y%2 === 0 ){
+      log.reset(game.world.width, y);
+      log.body.velocity.x = -this.logSpeed;
+    } else {
+      log.reset(0-width, y);
+      log.body.velocity.x = this.logSpeed;
+    }
+    log.checkWorldBounds = true;
+    log.outOfBoundsKill = true;
+  },
+  bunnyDie: function(){
+    this.resetBunny();
+  },
   preload: function() {
     game.load.image('background', 'GFX/BG.png');
     game.load.image('bunny', 'GFX/bunny.png');
+    game.load.image('car1', 'GFX/car1.png');
+    game.load.image('car2', 'GFX/car2.png');
+    game.load.image('truck', 'GFX/truck.png');
+    game.load.image('car1F', 'GFX/car1F.png');
+    game.load.image('car2F', 'GFX/car2F.png');
+    game.load.image('truckF', 'GFX/truckF.png');
+    game.load.image('logx3', 'GFX/logx3.png');
+    game.load.image('logx5', 'GFX/logx5.png');
+    game.load.image('logFix', 'GFX/logFix.png');
+  },
+  create: function() {
     this.baskets = [32,128,224,320];
     this.rows = [];
     this.score = 0;
@@ -75,24 +208,32 @@ var gameState = {
     for(var i = 0;i<rowNum;i++){
       this.rows.push(this.tileSize*i);
     };
-
-  },
-  create: function() {
-    this.background = game.add.tileSprite(0, 0, 384, 544, 'background');
+    game.add.tileSprite(0, 0, 384, 544, 'background');
+    this.setUpLogs();
+    game.add.tileSprite(0, this.rows[8], 384, 32, 'logFix');
     this.player = game.add.sprite(0+this.tileSize/2,this.rows[this.rows.length-1]+this.tileSize/2,'bunny');
     this.player.anchor.setTo(0.5);
+    this.setUpCars();
     this.keys = game.input.keyboard.createCursorKeys();
     game.physics.arcade.enable(this.player);
     this.player.body.collideWorldBounds=true;
   },
   update: function() {
     this.bunnyHop();
+    this.checkIfOnLog();
     this.checkBunny();
     this.bunnyUpdate();
+    this.checkCars();
+    this.checkLogs();
+    game.physics.arcade.overlap(this.player, this.cars, this.bunnyDie, null, this);
+    if(this.score === 4){
+      game.state.start('win');
+    }
   }
 };
 
 var game = new Phaser.Game(384, 544, Phaser.AUTO, 'game');
 
 game.state.add('game', gameState);
+game.state.add('win', winState)
 game.state.start('game');
