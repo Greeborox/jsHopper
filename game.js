@@ -1,14 +1,43 @@
 
-var winState = {
+var loadState = {
   preload: function() {
-
+    var loadingText = game.add.text(game.world.centerX, 150, 'loading...', { font: '30px Arial', fill: '#FFF' });
+    loadingText.anchor.setTo(0.5, 0.5);
+    game.load.image('splash', 'GFX/splashScreen.png');
+    game.load.image('background', 'GFX/BG.png');
+    game.load.image('bunny', 'GFX/bunny.png');
+    game.load.image('car1', 'GFX/car1.png');
+    game.load.image('car2', 'GFX/car2.png');
+    game.load.image('truck', 'GFX/truck.png');
+    game.load.image('car1F', 'GFX/car1F.png');
+    game.load.image('car2F', 'GFX/car2F.png');
+    game.load.image('truckF', 'GFX/truckF.png');
+    game.load.image('logx3', 'GFX/logx3.png');
+    game.load.image('logx5', 'GFX/logx5.png');
+    game.load.image('logFix', 'GFX/logFix.png');
   },
   create: function() {
-    style = {font: '18px Arial', fill: '#ffffff'};
-    this.Congratulations = game.add.text(30, 30, 'CONGRATULATIONS!',style)
+    game.state.start('menu');
   },
   update: function() {
 
+  }
+}
+
+var menuState = {
+  create: function() {
+    game.add.image(0, 0, 'splash');
+    style = {font: '25px Arial', fill: '#ffffff'};
+    this.welcomeText = game.add.text(15, -50, 'Welcome to the game! \npress Space!',style)
+
+    var welcomeTween = game.add.tween(this.welcomeText);
+    welcomeTween.to({y: 160}, 700).easing(Phaser.Easing.Bounce.Out);
+    welcomeTween.start();
+    var spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+    spaceKey.onDown.addOnce(this.startGame, this);
+  },
+  startGame: function() {
+    game.state.start('game');
   }
 }
 
@@ -186,19 +215,24 @@ var gameState = {
   },
   bunnyDie: function(){
     this.resetBunny();
-  },
-  preload: function() {
-    game.load.image('background', 'GFX/BG.png');
-    game.load.image('bunny', 'GFX/bunny.png');
-    game.load.image('car1', 'GFX/car1.png');
-    game.load.image('car2', 'GFX/car2.png');
-    game.load.image('truck', 'GFX/truck.png');
-    game.load.image('car1F', 'GFX/car1F.png');
-    game.load.image('car2F', 'GFX/car2F.png');
-    game.load.image('truckF', 'GFX/truckF.png');
-    game.load.image('logx3', 'GFX/logx3.png');
-    game.load.image('logx5', 'GFX/logx5.png');
-    game.load.image('logFix', 'GFX/logFix.png');
+    this.player.kill();
+    style = {font: '25px Arial', fill: '#ffffff'};
+    this.ohNo = game.add.text(game.world.centerX, -50, 'OH NO!',style);
+    this.ohNo.anchor.setTo(0.5);
+    this.dieText = game.add.text(game.world.centerX, -50, 'You have died!',style);
+    this.dieText.anchor.setTo(0.5);
+    var ohNoTween = game.add.tween(this.ohNo);
+    ohNoTween.to({y: 160}, 1000).easing(Phaser.Easing.Bounce.Out);
+    ohNoTween.start();
+    ohNoTween.onComplete.add(function(){
+      this.ohNo.kill();
+      var dieTextTween = game.add.tween(this.dieText);
+      dieTextTween.to({y: 160}, 1000).easing(Phaser.Easing.Bounce.Out);
+      dieTextTween.start();
+      dieTextTween.onComplete.add(function(){
+        game.state.start('menu');
+      },this)
+    },this)
   },
   create: function() {
     this.baskets = [32,128,224,320];
@@ -227,13 +261,25 @@ var gameState = {
     this.checkLogs();
     game.physics.arcade.overlap(this.player, this.cars, this.bunnyDie, null, this);
     if(this.score === 4){
-      game.state.start('win');
+      this.score++;
+      this.resetBunny();
+      this.player.kill();
+      style = {font: '25px Arial', fill: '#ffffff'};
+      this.gratsText = game.add.text(game.world.centerX, -50, 'Congratulations!',style);
+      this.gratsText.anchor.setTo(0.5);
+      var gratsTween = game.add.tween(this.gratsText);
+      gratsTween.to({y: 160}, 1000).easing(Phaser.Easing.Bounce.Out);
+      gratsTween.start();
+      gratsTween.onComplete.add(function(){
+        game.state.start('menu');
+      },false)
     }
   }
 };
 
 var game = new Phaser.Game(384, 544, Phaser.AUTO, 'game');
 
+game.state.add('load', loadState)
+game.state.add('menu', menuState)
 game.state.add('game', gameState);
-game.state.add('win', winState)
-game.state.start('game');
+game.state.start('load');
